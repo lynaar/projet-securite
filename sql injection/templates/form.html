@@ -1,0 +1,229 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+  <meta charset="UTF-8"/>
+  <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+  <title>Commander</title>
+  <link href="https://fonts.googleapis.com/css2?family=Cormorant+Garamond:ital,wght@0,300;0,400;1,300;1,400&family=Syne:wght@400;600;700&display=swap" rel="stylesheet"/>
+  <style>
+    *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+    :root {
+      --ink: #0d0d0d; --paper: #f5f0e8; --accent: #b84a32;
+      --muted: #a09888; --line: #d8d0c4;
+    }
+    body {
+      min-height: 100vh; background: var(--paper);
+      display: flex; align-items: center; justify-content: center;
+      font-family: 'Syne', sans-serif; padding: 2rem;
+    }
+    body::before {
+      content: ''; position: fixed; inset: 0;
+      background-image: url("data:image/svg+xml,%3Csvg viewBox='0 0 256 256' xmlns='http://www.w3.org/2000/svg'%3E%3Cfilter id='noise'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.9' numOctaves='4' stitchTiles='stitch'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23noise)' opacity='0.04'/%3E%3C/svg%3E");
+      pointer-events: none; z-index: 100; opacity: 0.5;
+    }
+    .deco-line { position: fixed; background: var(--line); }
+    .deco-line.h { height: 1px; width: 100vw; left: 0; }
+    .deco-line.v { width: 1px; height: 100vh; top: 0; }
+    .deco-line.top { top: 3rem; } .deco-line.bottom { bottom: 3rem; }
+    .deco-line.left { left: 3rem; } .deco-line.right { right: 3rem; }
+    .corner { position: fixed; width: 18px; height: 18px; border-color: var(--muted); border-style: solid; }
+    .corner.tl { top: 1.5rem; left: 1.5rem; border-width: 1px 0 0 1px; }
+    .corner.tr { top: 1.5rem; right: 1.5rem; border-width: 1px 1px 0 0; }
+    .corner.bl { bottom: 1.5rem; left: 1.5rem; border-width: 0 0 1px 1px; }
+    .corner.br { bottom: 1.5rem; right: 1.5rem; border-width: 0 1px 1px 0; }
+    .stamp { position: fixed; bottom: 1.8rem; right: 5rem; font-size: 0.6rem; letter-spacing: 0.15em; text-transform: uppercase; color: var(--muted); }
+
+    .card {
+      position: relative; width: 100%; max-width: 620px;
+      padding: 3.5rem 3.5rem 3rem;
+      animation: fadeUp 0.8s cubic-bezier(0.16,1,0.3,1) both;
+    }
+    .card::before {
+      content: ''; position: absolute; left: 0; top: 3.5rem; bottom: 3rem;
+      width: 2px; background: var(--accent);
+    }
+    @keyframes fadeUp {
+      from { opacity: 0; transform: translateY(24px); }
+      to   { opacity: 1; transform: translateY(0); }
+    }
+
+    .eyebrow { font-size: 0.65rem; letter-spacing: 0.2em; text-transform: uppercase; color: var(--muted); margin-bottom: 0.6rem; animation: fadeUp 0.8s 0.05s cubic-bezier(0.16,1,0.3,1) both; }
+    .eyebrow span { color: var(--accent); font-style: italic; font-family: 'Cormorant Garamond', serif; font-size: 0.9rem; }
+    h1 { font-family: 'Cormorant Garamond', serif; font-weight: 300; font-size: 2.8rem; line-height: 1; color: var(--ink); margin-bottom: 2.5rem; animation: fadeUp 0.8s 0.1s cubic-bezier(0.16,1,0.3,1) both; }
+    h1 em { font-style: italic; color: var(--accent); }
+
+    .grid-2 { display: grid; grid-template-columns: 1fr 1fr; gap: 1.6rem 2rem; }
+    .span-2 { grid-column: span 2; }
+
+    .field { display: flex; flex-direction: column; gap: 0.45rem; animation: fadeUp 0.8s cubic-bezier(0.16,1,0.3,1) both; }
+    .field:nth-child(1){animation-delay:0.15s} .field:nth-child(2){animation-delay:0.2s}
+    .field:nth-child(3){animation-delay:0.24s} .field:nth-child(4){animation-delay:0.28s}
+    .field:nth-child(5){animation-delay:0.32s} .field:nth-child(6){animation-delay:0.36s}
+
+    .field label { font-size: 0.62rem; letter-spacing: 0.18em; text-transform: uppercase; color: var(--muted); transition: color 0.2s; }
+    .field:focus-within label { color: var(--accent); }
+
+    .input-wrap { position: relative; }
+    .input-wrap::after { content: ''; position: absolute; bottom: 0; left: 0; height: 1px; width: 0; background: var(--accent); transition: width 0.4s cubic-bezier(0.16,1,0.3,1); }
+    .input-wrap:focus-within::after { width: 100%; }
+
+    input, select {
+      width: 100%; background: transparent; border: none;
+      border-bottom: 1px solid var(--line); padding: 0.55rem 0;
+      font-family: 'Cormorant Garamond', serif; font-size: 1.08rem;
+      color: var(--ink); outline: none; transition: border-color 0.3s;
+      appearance: none; -webkit-appearance: none;
+    }
+    input::placeholder { color: var(--line); font-style: italic; }
+    input.error, select.error { border-bottom-color: var(--accent); }
+
+    .select-wrap { position: relative; }
+    .select-wrap::after { content: '▾'; position: absolute; right: 0; top: 55%; transform: translateY(-50%); color: var(--muted); pointer-events: none; font-size: 0.75rem; }
+    .select-wrap::before { content: ''; position: absolute; bottom: 0; left: 0; height: 1px; width: 0; background: var(--accent); transition: width 0.4s cubic-bezier(0.16,1,0.3,1); z-index: 1; }
+    .select-wrap:focus-within::before { width: 100%; }
+
+    .qty-wrap { display: flex; align-items: center; border-bottom: 1px solid var(--line); padding: 0.2rem 0; }
+    .qty-btn { background: none; border: none; color: var(--muted); font-size: 1.2rem; cursor: pointer; padding: 0 0.6rem; transition: color 0.2s; line-height: 1; }
+    .qty-btn:hover { color: var(--accent); }
+    .qty-input { border: none !important; text-align: center; width: 3rem; font-family: 'Cormorant Garamond', serif; font-size: 1.08rem; color: var(--ink); background: transparent; outline: none; padding: 0; }
+
+    .sep { border: none; border-top: 1px solid var(--line); margin: 2.2rem 0; animation: fadeUp 0.8s 0.38s cubic-bezier(0.16,1,0.3,1) both; }
+
+    .bottom-row { display: flex; align-items: center; justify-content: space-between; animation: fadeUp 0.8s 0.42s cubic-bezier(0.16,1,0.3,1) both; }
+    .recap { font-family: 'Cormorant Garamond', serif; font-size: 0.9rem; color: var(--muted); font-style: italic; }
+    .recap strong { font-style: normal; color: var(--ink); font-weight: 400; }
+
+    button[type="submit"] {
+      font-family: 'Syne', sans-serif; font-size: 0.7rem; letter-spacing: 0.2em;
+      text-transform: uppercase; color: var(--paper); background: var(--ink);
+      border: none; padding: 0.9rem 2.2rem; cursor: pointer;
+      position: relative; overflow: hidden;
+    }
+    button[type="submit"]::after { content: ''; position: absolute; inset: 0; background: var(--accent); transform: translateX(-100%); transition: transform 0.4s cubic-bezier(0.16,1,0.3,1); }
+    button[type="submit"]:hover::after { transform: translateX(0); }
+    button[type="submit"] span { position: relative; z-index: 1; }
+
+    @media (max-width: 580px) {
+      .card { padding: 2.5rem 1.8rem 2rem; }
+      .grid-2 { grid-template-columns: 1fr; }
+      .span-2 { grid-column: span 1; }
+    }
+  </style>
+</head>
+<body>
+  <div class="deco-line h top"></div><div class="deco-line h bottom"></div>
+  <div class="deco-line v left"></div><div class="deco-line v right"></div>
+  <div class="corner tl"></div><div class="corner tr"></div>
+  <div class="corner bl"></div><div class="corner br"></div>
+  <div class="stamp">Commande / 01</div>
+
+  <div class="card">
+    <p class="eyebrow">Connecté en tant que <span>{{ user }}</span></p>
+    <h1>Passer une<br><em>commande.</em></h1>
+
+    <form action="/submit" method="POST">
+      <input type="hidden" name="username" value="{{ user }}">
+
+      <div class="grid-2">
+
+        <!-- 1. Produit -->
+        <div class="field span-2">
+          <label for="produit">Produit</label>
+          <div class="select-wrap">
+            <select id="produit" name="produit" onchange="updateRecap()">
+              <option value="" disabled selected>Choisir un produit…</option>
+              <option value="Bougie Ambre Noir">Bougie Ambre Noir — 29,00 €</option>
+              <option value="Sérum Velours">Sérum Velours — 94,00 €</option>
+              <option value="Coffret Cadeau">Coffret Cadeau — 12,00 €</option>
+              <option value="Huile Essentielle">Huile Essentielle — 18,00 €</option>
+              <option value="Crème Nuit">Crème Nuit — 56,00 €</option>
+            </select>
+          </div>
+        </div>
+
+        <!-- 2. Quantité -->
+        <div class="field">
+          <label>Quantité</label>
+          <div class="qty-wrap">
+            <button type="button" class="qty-btn" onclick="changeQty(-1)">−</button>
+            <input class="qty-input" type="number" id="quantite" name="quantite" value="1" min="1" max="99" readonly onchange="updateRecap()">
+            <button type="button" class="qty-btn" onclick="changeQty(1)">+</button>
+          </div>
+        </div>
+
+        <!-- 3. Téléphone -->
+        <div class="field">
+          <label for="telephone">Téléphone</label>
+          <div class="input-wrap">
+            <input type="tel" id="telephone" name="telephone" placeholder="+213 6 00 00 00 00"/>
+          </div>
+        </div>
+
+        <!-- 4. Adresse -->
+        <div class="field span-2">
+          <label for="adresse">Adresse de livraison</label>
+          <div class="input-wrap">
+            <input type="text" id="adresse" name="adresse" placeholder="12 Rue des Martyrs, Alger"/>
+          </div>
+        </div>
+
+        <!-- 5. Mode de livraison -->
+        <div class="field">
+          <label for="livraison">Mode de livraison</label>
+          <div class="select-wrap">
+            <select id="livraison" name="livraison">
+              <option value="standard">Standard — Gratuit</option>
+              <option value="express">Express — 4,90 €</option>
+              <option value="retrait">Retrait en boutique</option>
+            </select>
+          </div>
+        </div>
+
+        <!-- 6. Note -->
+        <div class="field">
+          <label for="note">Note (optionnel)</label>
+          <div class="input-wrap">
+            <input type="text" id="note" name="note" placeholder="Instructions particulières…"/>
+          </div>
+        </div>
+
+      </div>
+
+      <hr class="sep"/>
+
+      <div class="bottom-row">
+        <div class="recap" id="recap">Sélectionnez un produit</div>
+        <button type="submit"><span>Commander &rarr;</span></button>
+      </div>
+    </form>
+  </div>
+
+  <script>
+    function changeQty(delta) {
+      const input = document.getElementById('quantite');
+      input.value = Math.min(99, Math.max(1, parseInt(input.value) + delta));
+      updateRecap();
+    }
+    function updateRecap() {
+      const produit = document.getElementById('produit').value;
+      const qty = document.getElementById('quantite').value;
+      const recap = document.getElementById('recap');
+      recap.innerHTML = produit
+        ? `<strong>${qty} × ${produit}</strong>`
+        : 'Sélectionnez un produit';
+    }
+    document.querySelector('form').addEventListener('submit', function(e) {
+      let valid = true;
+      ['produit','telephone','adresse'].forEach(id => {
+        const el = document.getElementById(id);
+        if (!el.value.trim()) {
+          el.classList.add('error');
+          valid = false;
+          ['input','change'].forEach(ev => el.addEventListener(ev, () => el.classList.remove('error'), {once:true}));
+        }
+      });
+      if (!valid) e.preventDefault();
+    });
+  </script>
+</body>
+</html>
